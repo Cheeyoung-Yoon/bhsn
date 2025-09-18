@@ -24,7 +24,7 @@ class LawChatbot:
         # Initialize components
         self.embedder = EmbeddingClient()
         self.vector_db = VectorDB(
-            dim=1536  # Dimension for embeddings (adjust based on your embedding model)
+            dim=3072  # Google Gemini embedding model dimension
         )
         
         # Initialize Google GenAI client for chat

@@ -22,12 +22,41 @@ class VectorDB:
     def _ensure_index(self):
         existing = {ix["name"] for ix in self.pc.list_indexes().get("indexes", [])}
         if self.index_name not in existing:
+            print(f"🏗️  인덱스 '{self.index_name}' 생성 중 (차원: {self.dim})")
             self.pc.create_index(
                 name=self.index_name,
                 dimension=self.dim,
                 metric=self.metric,
                 spec=ServerlessSpec(cloud=PINECONE_CLOUD, region=PINECONE_REGION),
                 )
+            print(f"✅ 인덱스 생성 완료")
+        else:
+            # 기존 인덱스의 차원 확인
+            index = self.pc.Index(self.index_name)
+            stats = index.describe_index_stats()
+            existing_dim = stats.get('dimension')
+            
+            if existing_dim != self.dim:
+                print(f"⚠️  차원 불일치 감지!")
+                print(f"   기존: {existing_dim}차원, 요구: {self.dim}차원")
+                print(f"🗑️  기존 인덱스 삭제 중...")
+                self.pc.delete_index(self.index_name)
+                
+                # 삭제 대기
+                import time
+                print("⏳ 삭제 완료 대기 중...")
+                time.sleep(10)
+                
+                print(f"🏗️  새 인덱스 생성 중 (차원: {self.dim})")
+                self.pc.create_index(
+                    name=self.index_name,
+                    dimension=self.dim,
+                    metric=self.metric,
+                    spec=ServerlessSpec(cloud=PINECONE_CLOUD, region=PINECONE_REGION),
+                )
+                print(f"✅ 인덱스 재생성 완료")
+            else:
+                print(f"✅ 기존 인덱스 사용 (차원: {existing_dim})")
 
 
     def upsert(self, ids, vectors, metadatas):
