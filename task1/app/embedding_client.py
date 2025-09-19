@@ -22,73 +22,73 @@ class EmbeddingClient:
 
     def _embed_once(self, texts: Sequence[str]) -> List[List[float]]:
         vecs = []
-        print(f"🔄 임베딩 처리 중: {len(texts)}개 텍스트")
+        print(f"Processing embeddings: {len(texts)} texts")
         
-        for i, t in enumerate(tqdm(texts, desc="임베딩 생성", unit="text")):
+        for i, t in enumerate(tqdm(texts, desc="Generating embeddings", unit="text")):
             max_retries = 3
             retry_delay = 2.0
             
             for attempt in range(max_retries):
                 try:
-                    print(f"📝 처리 중: {i+1}/{len(texts)} - 시도 {attempt+1}")
+                    print(f"Processing: {i+1}/{len(texts)} - attempt {attempt+1}")
                     resp = self.client.models.embed_content(model=self.model, contents=t)
                     vecs.append(resp.embeddings[0].values)
-                    print(f"✅ 성공: {i+1}/{len(texts)}")
+                    print(f"Success: {i+1}/{len(texts)}")
                     # Add delay to avoid rate limiting
                     time.sleep(1.5)  # Increased delay to 1.5 seconds
                     break
                 except Exception as e:
-                    print(f"❌ 오류 발생 (시도 {attempt+1}/{max_retries}): {e}")
+                    print(f"Error occurred (attempt {attempt+1}/{max_retries}): {e}")
                     if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
-                        print(f"⏳ 할당량 초과. {retry_delay}초 대기 후 재시도...")
+                        print(f"Rate limit exceeded. Waiting {retry_delay}s before retry...")
                         time.sleep(retry_delay)
                         retry_delay *= 2  # Exponential backoff
                     elif attempt == max_retries - 1:
-                        print(f"💀 최대 재시도 횟수 초과. 영벡터로 대체")
+                        print(f"Max retries exceeded. Using zero vector")
                         # Return zero vector on error
                         vecs.append([0.0] * 768)  # Assuming 768-dimensional embeddings
                     else:
                         time.sleep(retry_delay)
         
-        print(f"🎉 임베딩 완료: {len(vecs)}개 벡터 생성")
+        print(f"Embedding complete: {len(vecs)} vectors generated")
         return vecs
 
 
     def embed(self, texts: Sequence[str], batch_size=16) -> Dict[str, Any]:
-        print(f"🚀 임베딩 시작: 총 {len(texts)}개 텍스트, 배치 크기: {batch_size}")
+        print(f"Starting embeddings: {len(texts)} texts, batch size: {batch_size}")
         all_vecs = []
         
         total_batches = (len(texts) + batch_size - 1) // batch_size
         
-        for i in tqdm(range(0, len(texts), batch_size), desc="배치 처리", total=total_batches):
+        for i in tqdm(range(0, len(texts), batch_size), desc="Processing batches", total=total_batches):
             batch_num = i // batch_size + 1
             chunk = texts[i:i+batch_size]
-            print(f"\n📦 배치 {batch_num}/{total_batches} 처리 중 ({len(chunk)}개 텍스트)")
+            print(f"\nProcessing batch {batch_num}/{total_batches} ({len(chunk)} texts)")
             
             batch_vecs = self._embed_once(chunk)
             all_vecs.extend(batch_vecs)
             
-            print(f"✅ 배치 {batch_num} 완료. 누적: {len(all_vecs)}개 벡터")
+            print(f"Batch {batch_num} complete. Total: {len(all_vecs)} vectors")
             
             # Add delay between batches to avoid rate limiting
             if i + batch_size < len(texts):
-                print("⏳ 다음 배치 전 3초 대기...")
+                print("Waiting 3s before next batch...")
                 time.sleep(3.0)
         
         arr = np.array(all_vecs, dtype=np.float32)
         if self.normalize:
-            print("🔧 벡터 정규화 중...")
+            print("Normalizing vectors...")
             arr = self._l2_normalize(arr)
-            print("✅ 정규화 완료")
+            print("Normalization complete")
         
-        print(f"🎯 최종 결과: {arr.shape[0]}개 벡터, 차원: {arr.shape[1]}")
+        print(f"Final result: {arr.shape[0]} vectors, dimension: {arr.shape[1]}")
         return {"embeddings": arr, "dim": arr.shape[1]}
 
 
     def embed_query(self, text: str):
-        print(f"🔍 쿼리 임베딩 생성 중...")
+        print("Query embedding generation...")
         result = self.embed([text])["embeddings"][0]
-        print(f"✅ 쿼리 임베딩 완료")
+        print("Query embedding complete")
         return result
 
 

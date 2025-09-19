@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 
 class LawChatbot:
     def __init__(self):
-        """법률 챗봇 초기화"""
+        """Initialize legal chatbot"""
         # Load environment variables
         env_path = os.path.join(os.path.dirname(__file__), '..', 'env', '.env')
         load_dotenv(env_path)
@@ -30,58 +30,64 @@ class LawChatbot:
         # Initialize Google GenAI client for chat
         api_key = os.getenv("GOOGLE_API_KEY")
         if not api_key:
-            raise RuntimeError("GOOGLE_API_KEY 환경변수가 설정되지 않았습니다")
+            raise RuntimeError("GOOGLE_API_KEY environment variable not set")
         self.genai_client = Client(api_key=api_key)
         
         # Chat history
         self.chat_history = []
     
     def retrieve_relevant_docs(self, query: str, top_k: int = 3) -> List[str]:
-        """질의와 관련된 문서 검색"""
+        """Query and retrieve relevant documents"""
         try:
             # Generate query embedding
             query_embedding = self.embedder.embed_query(query)
             
             # Search in vector database
             results = self.vector_db.search(
-                query_vector=query_embedding.tolist(),
+                query_vector=query_embedding,
                 top_k=top_k
             )
             
             # Extract text content from results
             docs = []
-            for match in results.get('matches', []):
-                metadata = match.get('metadata', {})
-                content = metadata.get('content', '')
+            for match in results.matches:
+                metadata = match.metadata or {}
+                # Try different possible content fields
+                content = metadata.get('text', '') or metadata.get('content', '') or metadata.get('판결요지', '')
+                case_name = metadata.get('사건명', '')
+                case_number = metadata.get('사건번호', '')
+                
                 if content:
-                    docs.append(content)
+                    # Format the document with case information
+                    doc_text = f"[사건: {case_name} ({case_number})]\n{content}"
+                    docs.append(doc_text)
             
             return docs
         except Exception as e:
-            print(f"문서 검색 중 오류 발생: {e}")
+            print(f"Document search error: {e}")
             return []
     
     def generate_response(self, query: str, context_docs: List[str]) -> str:
-        """검색된 문서를 바탕으로 답변 생성"""
+        """Generate response based on retrieved documents"""
         try:
             # Prepare context
-            context = "\n\n".join(context_docs) if context_docs else "관련 문서를 찾을 수 없습니다."
+            context = "\n\n".join(context_docs) if context_docs else "No relevant documents found."
             
             # Create prompt
-            prompt = f"""당신은 한국 법률 전문가입니다. 주어진 법률 문서를 바탕으로 사용자의 질문에 정확하고 도움이 되는 답변을 제공해주세요.
+            prompt = f"""You are a Korean legal expert. Please provide accurate and helpful answers to the user's questions based on the given legal documents.
 
-관련 법률 문서:
+Relevant Legal Documents:
 {context}
 
-사용자 질문: {query}
+User Question: {query}
 
-답변 시 다음 사항을 고려해주세요:
-1. 제공된 법률 문서의 내용을 기반으로 답변하세요
-2. 정확한 법조문이나 판례를 인용하세요
-3. 이해하기 쉽게 설명해주세요
-4. 추가 상담이 필요한 경우 전문가 상담을 권하세요
+Please consider the following when answering:
+1. Base your answer on the provided legal documents
+2. Cite specific laws or precedents when possible
+3. Explain in an easy-to-understand manner
+4. Recommend professional consultation when additional advice is needed
 
-답변:"""
+Answer:"""
 
             # Generate response using Google GenAI
             response = self.genai_client.models.generate_content(
@@ -92,19 +98,19 @@ class LawChatbot:
             return response.text
             
         except Exception as e:
-            print(f"답변 생성 중 오류 발생: {e}")
-            return "죄송합니다. 답변을 생성하는 중에 오류가 발생했습니다. 다시 시도해주세요."
+            print(f"Response generation error: {e}")
+            return "Sorry, an error occurred while generating the response. Please try again."
     
     def chat(self, message: str, history: List[dict]) -> Tuple[str, List[dict]]:
-        """챗봇과의 대화 처리"""
+        """Handle chatbot conversation"""
         if not message.strip():
             return "", history
         
         try:
             # Retrieve relevant documents
-            print(f"사용자 질문: {message}")
+            print(f"User question: {message}")
             relevant_docs = self.retrieve_relevant_docs(message, top_k=3)
-            print(f"검색된 문서 수: {len(relevant_docs)}")
+            print(f"Found documents: {len(relevant_docs)}")
             
             # Generate response
             response = self.generate_response(message, relevant_docs)
@@ -116,7 +122,7 @@ class LawChatbot:
             return "", history
             
         except Exception as e:
-            error_msg = f"오류가 발생했습니다: {str(e)}"
+            error_msg = f"An error occurred: {str(e)}"
             history.append({"role": "user", "content": message})
             history.append({"role": "assistant", "content": error_msg})
             return "", history

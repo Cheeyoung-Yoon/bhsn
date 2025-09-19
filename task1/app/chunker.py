@@ -35,11 +35,11 @@ def make_chunks(text: str, min_len=400, max_len=900, overlap=80) -> List[str]:
 
 
 def smart_chunk_summary(text: str, threshold=300) -> List[str]:
-    """판결요지를 스마트 청킹: 300자 이상만 문장 단위로 분할"""
+    """Smart chunking for judgment summary: split by sentences only if over 300 characters"""
     if not text or len(text) <= threshold:
         return [text] if text else []
     
-    # 300자 이상일 때만 문장 단위로 분할
+    # Split by sentences only if over 300 characters
     sentences = _split_sentences(text)
     chunks = []
     current_chunk = ""
@@ -81,25 +81,32 @@ def _base_meta(rec: Dict) -> Dict:
 
 
 def build_chunk_entries(rec: Dict, min_len=400, max_len=900, overlap=80) -> List[Dict]:
-    """판결요지만 스마트 청킹하고 나머지는 메타데이터로 저장"""
+    """Smart chunking for judgment summary only, store rest as metadata"""
     entries = []
     
-    # 판결요지 스마트 청킹 (300자 이상만 분할)
+    # Smart chunking for judgment summary (split only if over 300 characters)
     judgment_summary = rec.get("판결요지", "")
     if judgment_summary:
-        # 스마트 청킹 적용: 300자 이상만 문장 단위로 분할
+        # Apply smart chunking: split by sentences only if over 300 characters
         chunks = smart_chunk_summary(judgment_summary, threshold=300)
-        print(f"📝 판결요지 길이: {len(judgment_summary)} 문자 → {len(chunks)}개 청크")
+        print(f"Judgment summary length: {len(judgment_summary)} chars -> {len(chunks)} chunks")
         
         for i, chunk_text in enumerate(chunks):
+            # Create base metadata
+            meta = _base_meta(rec)
+            # Add the chunk text to metadata so it's retrievable
+            meta["text"] = chunk_text
+            meta["chunk_type"] = "판결요지"
+            meta["chunk_idx"] = i
+            
             entries.append({
                 "source_id": rec.get("판례정보일련번호"), 
                 "chunk_type": "판결요지", 
                 "chunk_idx": i, 
                 "text": chunk_text, 
-                "meta": _base_meta(rec)
+                "meta": meta
             })
     else:
-        print("⚠️ 판결요지가 없습니다.")
+        print("Warning: No judgment summary found.")
     
     return entries

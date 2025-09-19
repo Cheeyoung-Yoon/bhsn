@@ -2,7 +2,7 @@
 """
 Pinecone 인덱스 초기화 스크립트
 """
-
+# %%
 import os
 from dotenv import load_dotenv
 from pinecone import Pinecone
@@ -65,3 +65,4 @@ if __name__ == "__main__":
             print("\n💥 초기화 실패")
     else:
         print("❌ 작업이 취소되었습니다.")
+# %%

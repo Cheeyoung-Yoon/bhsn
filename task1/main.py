@@ -18,79 +18,79 @@ def batched(iterable, n):
 
 
 def run_task1():
-    """섹션별 처리로 메모리 효율성과 안정성 향상"""
-    print("🚀 Task1 시작: 케이스별 섹션 처리")
+    """Process cases by sections for memory efficiency and stability"""
+    print("Task1 starting: Processing cases by sections")
     
     records = parse_cases(DATA_JSON)
-    print(f"📚 총 {len(records)}개 케이스 파싱 완료")
+    print(f"Total {len(records)} cases parsed successfully")
     
-    # 임베딩 클라이언트 초기화
+    # Initialize embedding client
     embedder = EmbeddingClient()
     
-    # VectorDB 초기화 (첫 번째 케이스에서 차원 설정)
+    # Initialize VectorDB (dimension will be set from first case)
     vdb = None
     total_processed = 0
     
     for case_idx, rec in enumerate(records):
-        print(f"\n📋 케이스 {case_idx + 1}/{len(records)} 처리 중: {rec.get('title', 'Unknown')}")
+        print(f"\nProcessing case {case_idx + 1}/{len(records)}: {rec.get('title', 'Unknown')}")
         
-        # 현재 케이스의 청크 생성
+        # Generate chunks for current case
         case_entries = build_chunk_entries(rec, CHUNK_MIN, CHUNK_MAX, CHUNK_OVERLAP)
-        print(f"   📝 청크 수: {len(case_entries)}")
+        print(f"   Number of chunks: {len(case_entries)}")
         
         if not case_entries:
-            print("   ⚠️  빈 케이스, 건너뜀")
+            print("   Warning: Empty case, skipping")
             continue
         
-        # 케이스별 텍스트 임베딩 생성
+        # Generate embeddings for case texts
         texts = [e["text"] for e in case_entries]
-        print(f"   🔄 임베딩 생성 중...")
+        print(f"   Generating embeddings...")
         
         try:
-            emb_out = embedder.embed(texts, batch_size=8)  # 작은 배치 크기로 안정성 향상
+            emb_out = embedder.embed(texts, batch_size=8)  # Small batch size for stability
             vectors, dim = emb_out["embeddings"], emb_out["dim"]
-            print(f"   ✅ 임베딩 완료: {vectors.shape}")
+            print(f"   Embeddings complete: {vectors.shape}")
             
-            # VectorDB 초기화 (첫 번째 성공한 케이스에서)
+            # Initialize VectorDB (on first successful case)
             if vdb is None:
-                print(f"   🔧 VectorDB 초기화 (차원: {dim})")
+                print(f"   Initializing VectorDB (dimension: {dim})")
                 vdb = VectorDB(dim=dim)
             
-            # 판례정보일련번호를 ID로 사용 (ASCII 호환)
+            # Use case serial number as ID (ASCII compatible)
             ids = []
             for e in case_entries:
-                # 판례정보일련번호 + 청크인덱스로 고유 ID 생성 (판결요지만 처리하므로 간단)
-                case_id = e.get('source_id', 'unknown')  # 판례정보일련번호
+                # Create unique ID using case serial number + chunk index
+                case_id = e.get('source_id', 'unknown')  # Case serial number
                 chunk_idx = e.get('chunk_idx', 0)
-                unique_id = f"{case_id}_summary_{chunk_idx}"  # summary로 고정
+                unique_id = f"{case_id}_summary_{chunk_idx}"  # Fixed as summary
                 ids.append(unique_id)
             
             metas = [e["meta"] for e in case_entries]
             
-            # 배치별로 Pinecone에 업로드
-            batch_size = 64  # Pinecone 배치 크기
+            # Upload to Pinecone in batches
+            batch_size = 64  # Pinecone batch size
             for i in range(0, len(ids), batch_size):
                 batch_ids = ids[i:i+batch_size]
                 batch_vecs = [vectors[j].tolist() for j in range(i, min(i+batch_size, len(vectors)))]
                 batch_metas = metas[i:i+batch_size]
                 
-                print(f"   📤 배치 업로드: {len(batch_ids)}개 벡터")
+                print(f"   Uploading batch: {len(batch_ids)} vectors")
                 vdb.upsert(batch_ids, batch_vecs, batch_metas)
-                print(f"   ✅ 업로드 완료: {batch_ids[0]} ... {batch_ids[-1]}")
+                print(f"   Upload complete: {batch_ids[0]} ... {batch_ids[-1]}")
             
             total_processed += len(case_entries)
-            print(f"   🎯 케이스 완료. 누적 처리: {total_processed}개 청크")
+            print(f"   Case complete. Total processed: {total_processed} chunks")
             
         except Exception as e:
-            print(f"   ❌ 케이스 처리 실패: {e}")
-            print(f"   ⏭️  다음 케이스로 계속...")
+            print(f"   Error processing case: {e}")
+            print(f"   Continuing to next case...")
             continue
     
-    print(f"\n🎉 Task1 완료!")
-    print(f"📊 최종 통계:")
-    print(f"   - 처리된 케이스: {len(records)}개")
-    print(f"   - 총 청크 수: {total_processed}개")
-    print(f"   - VectorDB 상태: {'초기화 완료' if vdb else '초기화 실패'}")
+    print(f"\nTask1 complete!")
+    print(f"Final statistics:")
+    print(f"   - Processed cases: {len(records)}")
+    print(f"   - Total chunks: {total_processed}")
+    print(f"   - VectorDB status: {'Initialized successfully' if vdb else 'Initialization failed'}")
 
 
 if __name__ == "__main__":
