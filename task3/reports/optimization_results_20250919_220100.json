@@ -1,0 +1,159 @@
+{
+  "baseline": {
+    "timestamp": "2025-09-19T21:58:29.124121",
+    "system_info": {
+      "embedding_model": "gemini-embedding-001",
+      "vector_db": "pinecone",
+      "chat_model": "gemini-2.0-flash-001"
+    },
+    "embedding": {
+      "individual_avg_time": 1.92510191599528,
+      "individual_throughput": 0.5194530178850292,
+      "batch_performance": {
+        "1": {
+          "total_time": 1.8564198017120361,
+          "time_per_text": 1.8564198017120361,
+          "throughput": 0.5386712634059254
+        },
+        "3": {
+          "total_time": 5.579261779785156,
+          "time_per_text": 1.859753926595052,
+          "throughput": 0.53770554571747
+        },
+        "5": {
+          "total_time": 9.264094591140747,
+          "time_per_text": 1.8528189182281494,
+          "throughput": 0.5397181506308776
+        }
+      },
+      "batch_efficiency": 1.0390124458769316,
+      "min_latency": 1.8364150524139404,
+      "max_latency": 1.862421989440918,
+      "avg_latency": 1.846817684173584,
+      "p95_latency": 1.862421989440918,
+      "latency_std": 0.010433508440753756
+    },
+    "search": {
+      "avg_search_time": 0.40209102630615234,
+      "min_search_time": 0.19904518127441406,
+      "max_search_time": 1.210273265838623,
+      "queries_per_second": 2.4869990489133658,
+      "avg_results_count": 5.0,
+      "search_time_std": 0.45178871300368967
+    },
+    "end_to_end": {
+      "avg_total_response_time": 8.621616125106812,
+      "avg_retrieval_time": 2.4825611114501953,
+      "avg_generation_time": 6.139055013656616,
+      "questions_per_minute": 6.9592520856125075,
+      "total_time_std": 1.4377655393731634,
+      "retrieval_time_ratio": 0.28794614320867123,
+      "generation_time_ratio": 0.7120538567913287
+    },
+    "resource": {
+      "current_memory_mb": 0.15455341339111328,
+      "peak_memory_mb": 0.2683706283569336,
+      "memory_efficiency": 0.5858560732320092
+    }
+  },
+  "optimized": {
+    "embedding": {
+      "total_time": 5.573260068893433,
+      "avg_time_per_text": 0.9288766781489054,
+      "throughput": 1.0765691759995863,
+      "cache_hit_rate": 0.5
+    },
+    "search": {
+      "total_time": 6.188393831253052,
+      "avg_time_per_query": 1.0313989718755086,
+      "queries_per_second": 0.9695569098557347,
+      "cache_hit_rate": 0.5
+    },
+    "chatbot": {
+      "total_time": 24.629046201705933,
+      "avg_response_time": 8.209682067235311,
+      "questions_per_minute": 7.308443799481455,
+      "optimization_stats": {
+        "chatbot": {
+          "total_queries": 3,
+          "avg_response_time": 8.08319878578186,
+          "cache_hit_rate": 0
+        },
+        "embedding": {
+          "cache_size": 3,
+          "max_cache_size": 1000,
+          "cache_hits": 0,
+          "cache_misses": 3,
+          "hit_rate": 0.0,
+          "total_requests": 3
+        },
+        "vector_db": {
+          "cache_size": 3,
+          "max_cache_size": 500,
+          "cache_hits": 0,
+          "cache_misses": 3,
+          "hit_rate": 0.0,
+          "avg_search_time": 0.2010454535484314
+        },
+        "response_cache_size": 3
+      }
+    }
+  },
+  "comparison": {
+    "embedding": {
+      "total_time": {
+        "original": 5.710293769836426,
+        "optimized": 5.573260068893433,
+        "improvement_percent": 2.399766219854545
+      },
+      "avg_time_per_text": {
+        "original": 1.9034312566121419,
+        "optimized": 0.9288766781489054,
+        "improvement_percent": 51.19988310992727
+      },
+      "throughput": {
+        "original": 0.5253670162902909,
+        "optimized": 1.0765691759995863,
+        "improvement_percent": 104.91754195027907
+      }
+    },
+    "search": {
+      "total_time": {
+        "original": 7.158618927001953,
+        "optimized": 6.188393831253052,
+        "improvement_percent": 13.55324407741919
+      },
+      "avg_time_per_query": {
+        "original": 2.386206309000651,
+        "optimized": 1.0313989718755086,
+        "improvement_percent": 56.77662203870959
+      },
+      "queries_per_second": {
+        "original": 0.4190752476967519,
+        "optimized": 0.9695569098557347,
+        "improvement_percent": 131.35628152329298
+      }
+    },
+    "chatbot": {
+      "total_time": {
+        "original": 26.331952571868896,
+        "optimized": 24.629046201705933,
+        "improvement_percent": 6.467072145581117
+      },
+      "avg_response_time": {
+        "original": 8.777317523956299,
+        "optimized": 8.209682067235311,
+        "improvement_percent": 6.46707214558111
+      },
+      "questions_per_minute": {
+        "original": 6.83580146624974,
+        "optimized": 7.308443799481455,
+        "improvement_percent": 6.914219723397203
+      }
+    }
+  },
+  "metadata": {
+    "start_time": "2025-09-19T21:58:23.673890",
+    "test_data_size": 5
+  }
+}

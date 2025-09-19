@@ -24,9 +24,9 @@ sys.path.insert(0, str(current_dir))
 
 try:
     from performance_measurement import PerformanceMeasurementSystem
-    from speed_optimization import SpeedOptimizer, create_test_data
+    from speed_optimization import SpeedOptimizer
     from optimization_report_generator import OptimizationReportGenerator
-    from optimization_metrics import SpeedOptimizationMetrics
+    from optimization_metrics import SpeedOptimizationMetrics, create_test_data
 except ImportError as e:
     print(f"모듈 import 오류: {e}")
     print("필요한 파일들이 모두 존재하는지 확인해주세요.")
